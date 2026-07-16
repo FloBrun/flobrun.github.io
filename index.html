@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PICTS-Rollen-Quiz</title>
+<style>
+  :root {
+    --bg: #f4f2ee;
+    --card: #ffffff;
+    --ink: #2a2a2a;
+    --muted: #6b6b6b;
+    --accent: #2f5d50;
+    --accent-light: #e4efe9;
+    --border: #e0ddd6;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 32px 16px 80px;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  header h1 {
+    font-size: 1.7rem;
+    margin-bottom: 6px;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+  }
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 20px 0 32px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .question {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .question h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+  .question p.q-text {
+    font-size: 1.05rem;
+    margin: 0 0 18px;
+    font-weight: 500;
+  }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .option:hover {
+    border-color: var(--accent);
+  }
+  .option input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+  .option.selected {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+  .option .letter {
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 2px;
+  }
+  .actions {
+    text-align: center;
+    margin-top: 28px;
+  }
+  button#submitBtn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px 36px;
+    font-size: 1rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+  }
+  button#submitBtn:hover {
+    transform: translateY(-1px);
+  }
+  button#submitBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 10px;
+    min-height: 1.2em;
+  }
+  #result {
+    display: none;
+  }
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+  }
+  .result-card h2 {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin: 0 0 16px;
+  }
+  .result-card p {
+    font-size: 1.05rem;
+    margin: 0 0 14px;
+  }
+  .result-tag {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+  }
+  .breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 24px 0 8px;
+    flex-wrap: wrap;
+  }
+  .breakdown div {
+    text-align: center;
+  }
+  .breakdown .count {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .breakdown .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .restart {
+    margin-top: 24px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 10px 22px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .restart:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Welche Rolle spielst du im PICTS-Alltag?</h1>
+    <p>Fünf kurze Fragen, ein persönliches Ergebnis.</p>
+  </header>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <form id="quizForm">
+    <div id="questions"></div>
+    <div class="actions">
+      <button type="submit" id="submitBtn" disabled>Ergebnis anzeigen</button>
+      <div class="hint" id="hint">Bitte beantworte alle fünf Fragen.</div>
+    </div>
+  </form>
+
+  <div id="result">
+    <div class="result-card">
+      <div class="result-tag" id="resultTag"></div>
+      <h2 id="resultTitle"></h2>
+      <p id="resultText"></p>
+      <div class="breakdown" id="breakdown"></div>
+      <button class="restart" id="restartBtn">Quiz neu starten</button>
+    </div>
+  </div>
+
+  <footer>Erstellt mit ClaudeCode - MIA Di DOA | fb</footer>
+</div>
+
+<script>
+// Jede Option trägt ihren Persona-Key (A-D) fest in sich - das ist die
+// Grundlage für die Auswertung. Die Buchstaben, die den Nutzer:innen
+// angezeigt werden, werden davon unabhängig pro Frage neu gemischt,
+// damit z.B. nicht immer "A" die Baumeister:in-Antwort ist.
+const questions = [
+  {
+    text: "Eine Lehrperson meldet zum wiederholten Mal dasselbe technische Problem. Was ist dein erster Impuls?",
+    options: [
+      { key: "A", text: "Du gehst der Sache auf den Grund und baust eine dauerhafte Lösung." },
+      { key: "B", text: "Du bringst das Thema grundsätzlich bei der Schulleitung ein." },
+      { key: "C", text: "Du fragst im Kollegium herum, ob schon jemand eine Lösung hat." },
+      { key: "D", text: "Du schaust in eurer Wissensdatenbank nach, ob es dazu schon etwas gibt." }
+    ]
+  },
+  {
+    text: "Du hast eine freie Stunde für deine PICTS-Arbeit. Wofür entscheidest du dich?",
+    options: [
+      { key: "A", text: "Ein wiederkehrendes Problem strukturell lösen." },
+      { key: "B", text: "Ein Konzept für die nächste Schulentwicklungsrunde skizzieren." },
+      { key: "C", text: "Ein Gespräch mit einer Kolleg:in führen, die an Ähnlichem arbeitet." },
+      { key: "D", text: "Bestehendes Wissen aus dem letzten Jahr aufräumen." }
+    ]
+  },
+  {
+    text: "Wie beschreibst du deinen Beitrag zur Schule?",
+    options: [
+      { key: "A", text: "Ich sorge dafür, dass Dinge zuverlässig funktionieren." },
+      { key: "B", text: "Ich zeige auf, wohin sich die Schule digital entwickeln könnte." },
+      { key: "C", text: "Ich bringe Menschen zusammen, die voneinander profitieren." },
+      { key: "D", text: "Ich sorge dafür, dass gutes Wissen nicht verloren geht." }
+    ]
+  },
+  {
+    text: "Eine neue Kolleg:in fragt dich um Rat zu einem digitalen Tool. Wie reagierst du?",
+    options: [
+      { key: "A", text: "Du zeigst ihr, wie sie es selbst zuverlässig einrichten kann." },
+      { key: "B", text: "Du erklärst, warum das Tool zur Strategie der Schule passt." },
+      { key: "C", text: "Du stellst ihr jemanden vor, der damit Erfahrung hat." },
+      { key: "D", text: "Du verweist sie auf eine bestehende Anleitung." }
+    ]
+  },
+  {
+    text: "Was frustriert dich im PICTS-Alltag am meisten?",
+    options: [
+      { key: "A", text: "Dass dieselben Probleme immer wieder auftauchen." },
+      { key: "B", text: "Dass digitale Themen in der Schulentwicklung zu wenig mitgedacht werden." },
+      { key: "C", text: "Dass viele allein vor sich hin arbeiten." },
+      { key: "D", text: "Dass gutes Wissen verloren geht, weil es nirgends festgehalten wird." }
+    ]
+  }
+];
+
+const personas = {
+  A: {
+    name: "Baumeister:in",
+    tag: "Feld 1 · Gestalten",
+    text: "Du denkst in Fundamenten, nicht in Einzelfällen. Wo andere ein Problem lösen, fragst du, welches System dahintersteckt. Dieser Blick trägt den nächsten Abschnitt: Vom Reagieren zum Gestalten."
+  },
+  B: {
+    name: "Vordenker:in",
+    tag: "Feld 1 · Gestalten",
+    text: "Du siehst die grosse Linie, auch wenn andere noch im Detail stecken. Dir geht es darum, wofür die Schule digital steht. Diese Haltung trägt den nächsten Abschnitt: Vom Reagieren zum Gestalten."
+  },
+  C: {
+    name: "Verbinder:in",
+    tag: "Feld 5 · Netzwerk",
+    text: "Für dich entsteht Wissen im Gespräch, nicht in der Ablage. Du merkst schnell, wer etwas weiss, das gerade jemandem fehlt. Das trägt den nächsten Abschnitt: Vom Einzelkämpfer zum Schwarm."
+  },
+  D: {
+    name: "Kurator:in",
+    tag: "Feld 5 · Netzwerk",
+    text: "Du denkst in Spuren des Wissens. Dir ist wichtig, dass gute Ideen nicht mit einer Person verschwinden. Das trägt den nächsten Abschnitt: Vom Einzelkämpfer zum Schwarm."
+  }
+};
+
+const bridge = {
+  name: "Brückenbauer:in",
+  tag: "Feld 1 & 5 · Brücke",
+  text: "Deine Antworten halten sich die Waage. Du bewegst dich zwischen Gestalten und Vernetzen und merkst oft als Erste, wenn beides auseinanderdriftet. Beide Abschnitte gehören zu dir."
+};
+
+const answers = {};
+const displayLetters = ["A", "B", "C", "D"];
+
+function shuffle(array) {
+  const arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function renderQuestions() {
+  const container = document.getElementById("questions");
+  questions.forEach((q, i) => {
+    const qDiv = document.createElement("div");
+    qDiv.className = "question";
+    qDiv.innerHTML = `<h2>Frage ${i + 1} von ${questions.length}</h2><p class="q-text">${q.text}</p>`;
+    const shuffledOptions = shuffle(q.options);
+    shuffledOptions.forEach((option, pos) => {
+      const displayLetter = displayLetters[pos];
+      const opt = document.createElement("label");
+      opt.className = "option";
+      opt.innerHTML = `
+        <input type="radio" name="q${i}" value="${option.key}">
+        <span><span class="letter">${displayLetter})</span> ${option.text}</span>
+      `;
+      const input = opt.querySelector("input");
+      input.addEventListener("change", () => {
+        answers[i] = option.key;
+        qDiv.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        updateProgress();
+      });
+      qDiv.appendChild(opt);
+    });
+    container.appendChild(qDiv);
+  });
+}
+
+function updateProgress() {
+  const answered = Object.keys(answers).length;
+  const total = questions.length;
+  document.getElementById("progressFill").style.width = (answered / total * 100) + "%";
+  const submitBtn = document.getElementById("submitBtn");
+  const hint = document.getElementById("hint");
+  if (answered === total) {
+    submitBtn.disabled = false;
+    hint.textContent = "Alle Fragen beantwortet. Du kannst dein Ergebnis anzeigen lassen.";
+  } else {
+    submitBtn.disabled = true;
+    hint.textContent = `Noch ${total - answered} von ${total} Fragen offen.`;
+  }
+}
+
+function computeResult() {
+  const counts = { A: 0, B: 0, C: 0, D: 0 };
+  Object.values(answers).forEach(letter => counts[letter]++);
+
+  const maxCount = Math.max(...Object.values(counts));
+  const topLetters = Object.keys(counts).filter(l => counts[l] === maxCount);
+
+  const gestaltenLetters = ["A", "B"];
+  const netzwerkLetters = ["C", "D"];
+
+  const hasGestalten = topLetters.some(l => gestaltenLetters.includes(l));
+  const hasNetzwerk = topLetters.some(l => netzwerkLetters.includes(l));
+
+  let persona;
+  if (topLetters.length === 1) {
+    persona = personas[topLetters[0]];
+  } else if (hasGestalten && hasNetzwerk) {
+    persona = bridge;
+  } else {
+    // Tie within the same field (e.g. A and B tied) -> combine the tied personas
+    const names = topLetters.map(l => personas[l].name);
+    persona = {
+      name: names.join(" & "),
+      tag: topLetters.every(l => gestaltenLetters.includes(l)) ? "Feld 1 · Gestalten" : "Feld 5 · Netzwerk",
+      text: topLetters.map(l => personas[l].text).join(" ")
+    };
+  }
+
+  return { persona, counts };
+}
+
+document.getElementById("quizForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const { persona, counts } = computeResult();
+
+  document.getElementById("quizForm").style.display = "none";
+  document.querySelector(".progress-bar").style.display = "none";
+  const result = document.getElementById("result");
+  result.style.display = "block";
+
+  document.getElementById("resultTag").textContent = persona.tag;
+  document.getElementById("resultTitle").textContent = persona.name;
+  document.getElementById("resultText").textContent = persona.text;
+
+  const breakdown = document.getElementById("breakdown");
+  breakdown.innerHTML = "";
+  ["A", "B", "C", "D"].forEach(letter => {
+    const div = document.createElement("div");
+    div.innerHTML = `<div class="count">${counts[letter]}</div><div class="label">${personas[letter].name}</div>`;
+    breakdown.appendChild(div);
+  });
+
+  result.scrollIntoView({ behavior: "smooth" });
+});
+
+document.getElementById("restartBtn").addEventListener("click", () => {
+  location.reload();
+});
+
+renderQuestions();
+</script>
+</body>
+</html>
